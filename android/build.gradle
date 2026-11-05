@@ -1,0 +1,39 @@
+buildscript {
+    ext {
+        buildToolsVersion = "36.0.0"
+        minSdkVersion = 24
+        compileSdkVersion = 36
+        targetSdkVersion = 36
+        ndkVersion = "27.1.12297006"
+        kotlinVersion = "2.2.0"
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath("com.google.gms:google-services:4.4.3")
+    }
+}
+
+apply plugin: "com.facebook.react.rootproject"
+
+// Force all third-party Android libraries to use the exact same SDK as the main app.
+// This prevents AAR metadata mismatches when libraries use older hardcoded values.
+subprojects {
+    plugins.withId("com.android.library") {
+        android {
+            compileSdkVersion rootProject.ext.compileSdkVersion
+            buildToolsVersion rootProject.ext.buildToolsVersion
+        }
+    }
+    plugins.withId("com.android.application") {
+        android {
+            compileSdkVersion rootProject.ext.compileSdkVersion
+            buildToolsVersion rootProject.ext.buildToolsVersion
+        }
+    }
+}
