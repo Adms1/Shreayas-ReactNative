@@ -20,30 +20,40 @@ target 'Skool360Mobile' do
     :path => config[:reactNativePath],
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+end
 
-  post_install do |installer|
-    react_native_post_install(
-      installer,
-      config[:reactNativePath],
-      :mac_catalyst_enabled => false
-    )
+post_install do |installer|
+  react_native_post_install(
+    installer,
+    # Change this to the path of your react-native module
+    File.dirname(Pod::Executable.execute_command('node', ['-p',
+      'require.resolve("react-native/package.json", {paths: [process.argv[1]]})',
+      __dir__]).strip),
+    :mac_catalyst_enabled => false
+  )
 
-    # GoogleService-Info.plist auto-registration for Firebase
+  # GoogleService-Info.plist auto-registration for Firebase
+  begin
     project_path = File.join(__dir__, 'Skool360Mobile.xcodeproj')
-    project = Xcodeproj::Project.open(project_path)
-    app_target = project.targets.find { |t| t.name == 'Skool360Mobile' }
+    if File.exist?(project_path)
+      project = Xcodeproj::Project.open(project_path)
+      app_target = project.targets.find { |t| t.name == 'Skool360Mobile' }
 
-    if app_target
-      already_added = app_target.resources_build_phase.files.any? do |f|
-        f.file_ref && f.file_ref.path == 'GoogleService-Info.plist'
-      end
+      if app_target
+        already_added = app_target.resources_build_phase.files.any? do |f|
+          f.file_ref && f.file_ref.path == 'GoogleService-Info.plist'
+        end
 
-      unless already_added
-        plist_group = project.main_group['Skool360Mobile'] || project.main_group
-        file_ref = plist_group.new_reference('GoogleService-Info.plist')
-        app_target.resources_build_phase.add_file_reference(file_ref)
-        project.save
+        unless already_added
+          plist_group = project.main_group['Skool360Mobile'] || project.main_group
+          file_ref = plist_group.new_reference('GoogleService-Info.plist')
+          app_target.resources_build_phase.add_file_reference(file_ref)
+          project.save
+          puts "✅ GoogleService-Info.plist registered in Xcode project"
+        end
       end
     end
+  rescue => e
+    puts "⚠️  Could not auto-register GoogleService-Info.plist: #{e.message}"
   end
 end
