@@ -305,8 +305,8 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.edplex.location11";
-				PRODUCT_NAME = "Skool360Mobile";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.edplex.location38";
+                PRODUCT_NAME = "Shreyas Foundation";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
