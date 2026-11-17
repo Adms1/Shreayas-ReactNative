@@ -166,6 +166,27 @@ const DashboardWebViewScreen: React.FC<Props> = ({route, navigation}) => {
   const {username, password} = route.params;
     const insets = useSafeAreaInsets();
   const webViewRef = useRef<any>(null);
+
+  // Only ever hand the WebView a non-empty string. If a script constant is missing (undefined/null),
+  // iOS fails with "injectJavaScript received 1st argument of type NSNull, expected string".
+  // A function may be passed so that a failing script builder is caught as well.
+  const safeInject = (script: string | (() => string) | null | undefined, label: string = 'script') => {
+    let code: unknown = script;
+    try {
+      if (typeof script === 'function') {
+        code = script();
+      }
+    } catch (e) {
+      code = undefined;
+    }
+    if (typeof code !== 'string' || code.length === 0) {
+      if (__DEV__) {
+        console.warn('[WebView] injectJavaScript skipped: ' + label + ' is ' + String(code));
+      }
+      return;
+    }
+    webViewRef.current?.injectJavaScript(code);
+  };
   const canGoBackRef = useRef(false);
   const reachedDashboardRef = useRef(false);
   const attemptedAutoLoginRef = useRef(false);
@@ -472,15 +493,15 @@ const handleRetry = () => {
       setRefreshing(false);
       springTo(0);
     }
-    webViewRef.current?.injectJavaScript(PULL_REFRESH_INJECTION);
-    webViewRef.current?.injectJavaScript(PRINT_OVERRIDE_INJECTION);
-    webViewRef.current?.injectJavaScript(UPI_INTERCEPT_INJECTION);
-    webViewRef.current?.injectJavaScript(MODAL_CONTROL);
-    webViewRef.current?.injectJavaScript(DISABLE_ZOOM_INJECTION);
-    webViewRef.current?.injectJavaScript(NO_ZOOM_INJECTION);
-    webViewRef.current?.injectJavaScript(IOS_FAST_TAP_INJECTION);
-      webViewRef.current?.injectJavaScript(EXPORT_INTERCEPT_INJECTION);
-    webViewRef.current?.injectJavaScript(FILE_LINK_INJECTION);
+    safeInject(PULL_REFRESH_INJECTION, 'PULL_REFRESH_INJECTION');
+    safeInject(PRINT_OVERRIDE_INJECTION, 'PRINT_OVERRIDE_INJECTION');
+    safeInject(UPI_INTERCEPT_INJECTION, 'UPI_INTERCEPT_INJECTION');
+    safeInject(MODAL_CONTROL, 'MODAL_CONTROL');
+    safeInject(DISABLE_ZOOM_INJECTION, 'DISABLE_ZOOM_INJECTION');
+    safeInject(NO_ZOOM_INJECTION, 'NO_ZOOM_INJECTION');
+    safeInject(IOS_FAST_TAP_INJECTION, 'IOS_FAST_TAP_INJECTION');
+      safeInject(EXPORT_INTERCEPT_INJECTION, 'EXPORT_INTERCEPT_INJECTION');
+    safeInject(FILE_LINK_INJECTION, 'FILE_LINK_INJECTION');
     const loadedUrl: string = event?.nativeEvent?.url ?? '';
     const onDashboard = reachedDashboardRef.current || loadedUrl.includes('/Dashboard');
     if (onDashboard) {
@@ -497,7 +518,7 @@ const handleRetry = () => {
 
     if (!attemptedAutoLoginRef.current) {
       attemptedAutoLoginRef.current = true;
-      webViewRef.current?.injectJavaScript(buildLoginInjection(username, password));
+      safeInject(() => buildLoginInjection(username, password), 'buildLoginInjection');
     }
   };
 const saveBase64File = async (fileName: string, mime: string, data: string) => {
@@ -620,7 +641,7 @@ const saveBase64File = async (fileName: string, mime: string, data: string) => {
   const handleSelectProfile = (index: number) => {
     setUserOptions(null);
     setAuthenticating(true);
-    webViewRef.current?.injectJavaScript(buildSelectUserInjection(index));
+    safeInject(() => buildSelectUserInjection(index), 'buildSelectUserInjection');
   };
 
   // Domains that must always stay INSIDE the WebView
@@ -718,9 +739,7 @@ const saveBase64File = async (fileName: string, mime: string, data: string) => {
         downloadFile(targetUrl);
         return;
       }
-      webViewRef.current?.injectJavaScript(
-        `window.location.href = ${JSON.stringify(targetUrl)}; true;`,
-      );
+      safeInject(`window.location.href = ${JSON.stringify(targetUrl)}; true;`, 'open-window redirect');
     }
   };
 

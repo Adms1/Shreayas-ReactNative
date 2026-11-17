@@ -1,4 +1,4 @@
-package com.skool360mobile
+package com.edplex.location38
 
 import android.os.Bundle
 import com.facebook.react.ReactActivity
@@ -25,4 +25,3 @@ class MainActivity : ReactActivity() {
   override fun createReactActivityDelegate(): ReactActivityDelegate =
       DefaultReactActivityDelegate(this, mainComponentName)
 }
-

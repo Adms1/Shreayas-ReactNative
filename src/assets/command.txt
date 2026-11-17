@@ -1935,3 +1935,15 @@ pod install
 
 cd ..
 npx react-native run-ios
+
+cd ios
+bundle install          # installs correct gem versions from Gemfile
+
+pod deintegrate
+rm -rf Pods
+rm -f Podfile.lock
+
+bundle exec pod install --verbose
+
+cd ..
+npx react-native run-ios

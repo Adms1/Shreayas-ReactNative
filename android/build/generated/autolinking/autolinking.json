@@ -926,7 +926,7 @@
     "android": {
       "sourceDir": "D:\\Project\\ReactNative\\ShreyasFoundation38\\android",
       "appName": "app",
-      "packageName": "com.skool360mobile",
+      "packageName": "com.edplex.location38",
       "applicationId": "com.edplex.location38",
       "mainActivity": ".MainActivity",
       "assets": []

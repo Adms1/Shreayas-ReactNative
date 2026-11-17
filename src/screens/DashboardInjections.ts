@@ -420,6 +420,101 @@ export const DISABLE_LONG_PRESS_CALLOUT = `
 true;
 `;
 
+// Links to files (jpg, png, mp3, mp4, xls, pdf ... or anything on the file storage host):
+// a tap starts a download in the app instead of opening a browser or a new window.
+//  - links that open the site's own image viewer (Spotlight / lightbox) are NOT touched: the viewer opens,
+//    and the file is only downloaded when the viewer's Download button is pressed
+//  - that Download button (a script-made <a download>) is caught here and handed to the app
+export const FILE_LINK_INJECTION = `
+(function () {
+  if (window.__fileLinkHooked) return;
+  window.__fileLinkHooked = true;
+
+  var EXT = /\\.(pdf|docx?|xlsx?|pptx?|csv|zip|rar|7z|txt|rtf|jpe?g|png|gif|webp|bmp|mp3|wav|m4a|aac|ogg|mp4|mov|m4v|webm|3gp)$/i;
+  var HOST = /(^|\\.)(amazonaws\\.com|cloudfront\\.net)$/i;
+  // image viewers (the site uses Spotlight): these open their own popup on tap
+  var VIEWER = '.spotlight, [data-spotlight], .glightbox, [data-fancybox], [data-lightbox], [data-toggle="lightbox"]';
+
+  function post(o) {
+    try { window.ReactNativeWebView.postMessage(JSON.stringify(o)); } catch (x) {}
+  }
+
+  function isFileHref(href) {
+    try {
+      if (!/^https?:/i.test(href || '')) { return false; }
+      var u = new URL(href);
+      return EXT.test(u.pathname) || HOST.test(u.hostname);
+    } catch (e) { return false; }
+  }
+
+  // blob:/data: files made in the page (the viewer's Download button may do this)
+  function sendBlobUrl(href, name) {
+    fetch(href).then(function (r) { return r.blob(); }).then(function (b) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        var s = String(fr.result);
+        post({type: 'FILE_BASE64', fileName: name || 'download', mime: b.type || '', data: s.substring(s.indexOf(',') + 1)});
+      };
+      fr.readAsDataURL(b);
+    }).catch(function () {});
+  }
+
+  function nameOf(a) {
+    var n = (a.getAttribute('download') || '').trim();
+    if (n && n !== 'true') { return n; }
+    return (a.getAttribute('data-filename') || a.textContent || '').trim();
+  }
+
+  // returns true when the app took over the download
+  function takeOver(a) {
+    try {
+      if (!a || a.tagName !== 'A') { return false; }
+      var href = a.href || '';
+      if (/^(blob|data):/i.test(href)) {
+        if (!a.hasAttribute('download')) { return false; }
+        sendBlobUrl(href, nameOf(a));
+        return true;
+      }
+      if (isFileHref(href)) {
+        post({type: 'DOWNLOAD_FILE', url: href, name: nameOf(a)});
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  // 1) the viewer's Download button: a script-made <a download href="file"> that gets clicked
+  try {
+    var origClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {
+      if (this.hasAttribute('download') && takeOver(this)) { return; }
+      return origClick.apply(this, arguments);
+    };
+    var origDispatch = EventTarget.prototype.dispatchEvent;
+    EventTarget.prototype.dispatchEvent = function (ev) {
+      if (ev && ev.type === 'click' && this && this.tagName === 'A' && this.hasAttribute('download') && takeOver(this)) {
+        return true;
+      }
+      return origDispatch.apply(this, arguments);
+    };
+  } catch (x) {}
+
+  // 2) a tap on an ordinary file link
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) { return; }
+    // opens the site's own viewer / popup: leave it alone
+    if (a.matches && a.matches(VIEWER)) { return; }
+    if (a.closest && a.closest(VIEWER) === a) { return; }
+    if (!isFileHref(a.href)) { return; }
+    e.preventDefault();
+    e.stopPropagation();
+    post({type: 'DOWNLOAD_FILE', url: a.href, name: nameOf(a)});
+  }, true);
+})();
+true;
+`;
+
 export const EXPORT_INTERCEPT_INJECTION = `
 (function () {
   if (window.__exportHooked) return;
