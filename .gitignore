@@ -1,5 +1,16 @@
-# Android build outputs
-android/app/build/
-android/.cxx/
-android/app/.cxx/
 node_modules/
+
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+
+ios/Pods/
+ios/build/
+
+.expo/
+.vscode/
+
+*.log
+.DS_Store
+
