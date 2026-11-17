@@ -81,10 +81,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.skool360mobile"
+    namespace "com.edplex.location38"
     defaultConfig {
         applicationId "com.edplex.location38"
-        resValue "string", "build_config_package", "com.skool360mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 12

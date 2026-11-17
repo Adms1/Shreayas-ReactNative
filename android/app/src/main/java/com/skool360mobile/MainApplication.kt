@@ -1,4 +1,4 @@
-package com.skool360mobile
+package com.edplex.location38
 
 import android.app.Application
 import com.facebook.react.PackageList

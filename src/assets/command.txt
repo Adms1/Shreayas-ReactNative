@@ -1910,3 +1910,28 @@ dot: {
 });
 
 export default DashboardWebViewScreen;
+
+
+
+# Move the Kotlin source files
+mkdir -p android/app/src/main/java/com/edplex/location38
+mv android/app/src/main/java/com/skool360mobile/MainActivity.kt \
+   android/app/src/main/java/com/edplex/location38/
+mv android/app/src/main/java/com/skool360mobile/MainApplication.kt \
+   android/app/src/main/java/com/edplex/location38/
+
+# Remove the old folder
+rm -rf android/app/src/main/java/com/skool360mobile
+# Also clean up the leftover com/edplex/location11 BuildConfig folder
+rm -rf android/app/src/main/java/com/edplex/location11
+
+
+
+# On Mac
+cd ios
+rm -rf ~/Library/Developer/Xcode/DerivedData
+pod deintegrate
+pod install
+
+cd ..
+npx react-native run-ios
